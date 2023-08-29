@@ -50,7 +50,7 @@ public class Hooks {
     }
 
 
-    @Before("api")
+    @Before("@api")
     public void setUpAPI()
     {
         RestAssured.baseURI = ConfigurationReader.getProperty("library.baseUri");
