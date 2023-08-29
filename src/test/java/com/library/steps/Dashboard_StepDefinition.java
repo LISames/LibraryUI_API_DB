@@ -20,7 +20,9 @@ import static io.restassured.RestAssured.given;
 public class Dashboard_StepDefinition
 {
     Response response;
+    JsonPath jsonPath;
     String token;
+    int id = 0;
     @Given("I logged Library api as a {string}")
     public void i_logged_library_api_as_a(String role)
     {
@@ -39,13 +41,30 @@ public class Dashboard_StepDefinition
     @When("I send GET request to {string} endpoint")
     public void i_send_get_request_to_endpoint(String endPoint)
     {
-        response = given().accept(ContentType.JSON)
-                .contentType(ContentType.JSON)
-                .header("x-library-token", token)
-                .when()
-                .get(ConfigurationReader.getProperty("library.baseUri") + endPoint).prettyPeek()
-                .then()
-                .extract().response();
+        System.out.println("id = " + id);
+
+        //verifying if id is being provided or if we are retrieving all data;
+        if(id==0) {
+            response = given().accept(ContentType.JSON)
+                    .contentType(ContentType.JSON)
+                    .header("x-library-token", token)
+                    .when()
+                    .get(ConfigurationReader.getProperty("library.baseUri") + endPoint).prettyPeek()
+                    .then()
+                    .extract().response();
+        }
+
+        else
+        {
+            response = given().accept(ContentType.JSON)
+                    .pathParam("id", id)
+                    .contentType(ContentType.JSON)
+                    .header("x-library-token", token)
+                    .when()
+                    .get(ConfigurationReader.getProperty("library.baseUri") + endPoint).prettyPeek()
+                    .then()
+                    .extract().response();
+        }
 
 
     }
@@ -66,7 +85,7 @@ public class Dashboard_StepDefinition
     @Then("{string} field should not be null")
     public void field_should_not_be_null(String key)
     {
-        JsonPath jsonPath = response.jsonPath();
+       jsonPath = response.jsonPath();
         //gets all data
         List<Map<String, String>> dataList = jsonPath.getList("");
 
@@ -79,4 +98,41 @@ public class Dashboard_StepDefinition
 
 
     }
+
+    @Given("Path param is {string}")
+    public void path_param_is(String expectedId)
+    {
+        //converting the string value to integer
+        id = Integer.valueOf(expectedId);
+        System.out.println("id = " + id);
+
+
+    }
+    @Then("{string} field should be same with path param")
+    public void field_should_be_same_with_path_param(String id)
+    {
+        jsonPath = response.jsonPath();
+        //converting expected id to integer
+        int expectedId = jsonPath.getInt("id");
+        Assert.assertTrue(expectedId == this.id);
+
+    }
+    @Then("following fields should not be null")
+    public void following_fields_should_not_be_null(List<String> keys)
+    {
+        Map<String, String> dataMap= jsonPath.getMap("");
+
+        //verify the key is not null
+        for (String eachKey : keys)
+        {
+            Assert.assertTrue(dataMap.get(eachKey)!=null);
+        }
+
+
+
+
+
+
+    }
+
 }
